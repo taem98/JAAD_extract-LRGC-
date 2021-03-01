@@ -28,12 +28,12 @@ def parsing_annotation(path, name):
 
     # for track in new_annotations:
     #     for box in track:
-    #         print(box.attrib)
+            # print(box[0].text) # 0_1_2b
+            # print(box.attrib)
     #         ## result ex {'frame': '69', 'keyframe': '1', 'occluded': '1', 'outside': '0', 
     #                   'xbr': '1919.0', 'xtl': '1894.0', 'ybr': '1079.0', 'ytl': '529.0'}
     return new_annotations
    
-
 
 def parsing_appearance(path, name):
     '''
@@ -65,18 +65,30 @@ def parsing_appearance(path, name):
 
     return new_appearnaces
 
-def find_LRGC():
-    pass
+def cut_img(img, f_num, box):
+    xbr = box.attrib['xbr']
+    xtl = box.attrib['xtl']
+    ybr = box.attrib['ybr']
+    ytl = box.attrib['ytl']
 
-def find_mnm():
-    pass
+    c_img = img[xtl:xbr, ytl:ybr]
+    
+    return c_img
 
-def cut_image(img, pos):
-    pass
+def make_obj(img, f_num, p_num, annotations, appearances, all_person):
 
-def make_obj():
-    pass
+    for annotation in annotations:          # each person
+        for box in annotation:              # each frame
+            if box.attrib['frame'] == str(f_num):
+                cut_img = cut_img(img, f_num, box)
+                p_num += 1
+                break
+            # img and other things write
+            
 
+
+
+    return all_person, p_num
 
 def start(vid_path, vid_name):
     '''
@@ -84,6 +96,8 @@ def start(vid_path, vid_name):
 
     [mnm] - str
     '''
+    cap = cv2.VideoCapture(vid_path+'JAAD_clips/'+vid_name+'.mp4')
+    
     annotations = parsing_annotation(vid_path+"annotations/", vid_name+'.xml') 
     
     # checking the existence of a person
@@ -93,23 +107,21 @@ def start(vid_path, vid_name):
 
     appearances = parsing_appearance(vid_path+'annotations_appearance/', vid_name+"_appearance.xml")
 
-    cap = cv2.VideoCapture(vid_path+'JAAD_clips/'+vid_name+'.mp4')
-    f_counter = -1    
-
+    f_counter = -1    # frame start 0 
+    p_counter = 0     # person nuber (img name)
+    all_person = [] # each person has [image_num, frame_num, person_ID, move, direction, looking ]
     while True: # while for one frame
         f_counter += 1
         ret, img = cap.read()
 
         if ret == False:
             continue
+        
+        all_person, p_counter = make_obj(img, f_counter, p_counter, annotations, appearances, all_person)
 
         # if cv2.waitKey(1)&0xFF == 27:
         #     break
-
-        # find_LRGC()
-        # find_mnm()
         break
-   
 
     cap.release()
     # cv2.destroyAllWindows()
